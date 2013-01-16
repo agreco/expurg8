@@ -16,15 +16,15 @@
 
 			return this.valid( v, true ) ? int_undo( v, this.precision ) : this.contingency;
 		},
-		valid     : function( v, skip_int ) {
+		valid     : function( v, nocast ) {
 			if ( !is_num( v ) ) return false;
 
-			var i = skip_int === true ? v : int_from( v, this.precision );
+			var i = nocast === true ? v : int_from( v, this.precision );
 
 			return this.parent( arguments )
 				&& i <= this.max
 				&& i >= this.min
-				&& ( skip_int === true || int_undo( i, this.precision ) === v );
+				&& ( nocast === true || int_undo( i, this.precision ) === v );
 		},
 // internal methods
 		init      : function() {
@@ -33,7 +33,7 @@
 			if ( !is_num( this.precision ) )
 				this.precision = __lib__.DECIMAL_PRECISION;
 
-			this.precision = Math.round( this.precision );
+			this.precision = Math.abs( Math.round( this.precision ) );
 
 			switch ( util.ntype( this.fallback ) ) {
 				case 'function' : break;
@@ -50,6 +50,7 @@
 				&& this.valid( this.min, true )
 				&& is_int( this.precision )
 				&& this.precision <= __lib__.DECIMAL_PRECISION
+				&& Math.abs( this.precision ) === this.precision
 				&& this.parent();
 		},
 		validType : is_num,

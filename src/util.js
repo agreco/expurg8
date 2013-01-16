@@ -3,8 +3,14 @@
 //		str = String( str );
 //		return str.charAt( 0 ).toUpperCase() + str.substring( 1 );
 //	}
-	function int_from( n, p ) { return Math.round( parseFloat( n ) * parseFloat( '1e' + p ) ); }
-	function int_undo( n, p ) { return parseFloat( ( parseFloat( n ) / parseFloat( '1e' + p ) ).toPrecision( p ) ); }
+	function int_from( n, p ) { return isNaN( n ) ? NaN : Math.round( parseFloat( n ) * parseFloat( '1e' + p ) ); }
+	function int_undo( n, p ) {
+		if ( isNaN( n ) ) return NaN;
+
+		var v = parseFloat( n ) / parseFloat( '1e' + p );
+
+		return isNaN( v ) || Math.abs( v ) === 0 || p === 0 ? v : parseFloat( v.toPrecision( p ) );
+	}
 
 	function is_arr(  v )   { return util.ntype( v ) == 'array'; }
 	function is_bool( v )   { return util.ntype( v ) == 'boolean'; }

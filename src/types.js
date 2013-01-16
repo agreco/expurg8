@@ -63,15 +63,15 @@
 
 			return this.valid( v, true ) ? int_undo( v, this.precision ) : this.contingency;
 		},
-		valid     : function( v, skip_int ) {
+		valid     : function( v, nocast ) {
 			if ( !is_num( v ) ) return false;
 
-			var i = skip_int === true ? v : int_from( v, this.precision );
+			var i = nocast === true ? v : int_from( v, this.precision );
 
 			return this.parent( arguments )
 				&& i <= this.max
 				&& i >= this.min
-				&& ( skip_int === true || int_undo( i, this.precision ) === v );
+				&& ( nocast === true || int_undo( i, this.precision ) === v );
 		},
 // internal methods
 		init      : function() {
@@ -80,7 +80,7 @@
 			if ( !is_num( this.precision ) )
 				this.precision = __lib__.DECIMAL_PRECISION;
 
-			this.precision = Math.round( this.precision );
+			this.precision = Math.abs( Math.round( this.precision ) );
 
 			switch ( util.ntype( this.fallback ) ) {
 				case 'function' : break;
@@ -97,6 +97,7 @@
 				&& this.valid( this.min, true )
 				&& is_int( this.precision )
 				&& this.precision <= __lib__.DECIMAL_PRECISION
+				&& Math.abs( this.precision ) === this.precision
 				&& this.parent();
 		},
 		validType : is_num,
@@ -109,12 +110,29 @@
 
 	define( 'type.Integer', {
 // class configuration
-		alias  : 'int integer',
-		extend : __lib__.type.Number,
+		alias     : 'int integer',
+		extend    : __lib__.type.Number,
+// public properties
+		precision : 0,
 // public methods
-		valid  : function( v ) { return this.parent( arguments ) && Math.floor( v ) === v; },
+		valid     : function( v ) { return this.parent( v, true ) && Math.floor( v ) === v; },
 // internal methods
-		value  : function( v ) { return Math.round( this.parent( arguments ) ); }
+		init      : function()    {
+			var max = this.max, min = this.min;
+
+			this.precision = 0;
+
+			this.parent( arguments );
+
+	// since we want our Types to be instantiated with as much correctness as possible,
+	// we don't want to cast our max/min as Integers
+			if ( max !== Number.POSITIVE_INFINITY )
+				this.max = max;
+			if ( min !== Number.NEGATIVE_INFINITY )
+				this.min = min;
+
+		},
+		value     : function( v ) { return Math.round( this.parent( arguments ) ); }
 	} );
 
 

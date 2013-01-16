@@ -3,7 +3,7 @@
 		alias     : '[] array',
 		extend    : __lib__.type.Object,
 // public properties
-		max       : MAX_ARRAY_LENGTH,
+		max       : __lib__.MAX_ARRAY_LENGTH,
 		min       : 0,
 // public methods
 		coerce    : function( v, novalidate ) {
@@ -33,7 +33,7 @@
 		test      : function()    {
 			return is_num( this.max )
 				&& is_num( this.min )
-				&& this.max <= MAX_ARRAY_LENGTH
+				&& this.max <= __lib__.MAX_ARRAY_LENGTH
 				&& this.min >= 0 // we can't have negative Array lengths silly — nb. "silly" refers to YOU, not me. ;^)
 				&& this.max >= this.min
 				&& this.parent();
