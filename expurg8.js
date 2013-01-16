@@ -276,7 +276,6 @@
 // class configuration
 			constructor : function Sanitizer( config ) {
 				this.parent( arguments ).test() || error( 'TypeError', {
-					classname     : this.constructor[__classname__],
 					configuration : config,
 					instance      : this,
 					message       : this.constructor[__classname__] + ': Invalid Configuration'
@@ -342,7 +341,6 @@
 
 			if ( property === null )
 				error( 'warning', {
-					classname : this.constructor[__classname__],
 					config    : config,
 					instance  : this,
 					message   : '{Name}.Schema: Invalid Property Configuration'
@@ -474,7 +472,6 @@
 	// this can be over-written to allow further customisation of a value before being passed back to the Schema
 		coerce       : function( accumulator ) {
 			accumulator instanceof Accumulator || error( 'typeerror', {
-				classname : this.constructor[__classname__],
 				config    : accumulator,
 				instance  : this,
 				message   : util.format( '{Name}.Schema.Property#coerce: expected instance of private Class — Accumulator — not: {0}', accumulator )
@@ -563,7 +560,10 @@
 		contingency : {
 			get     : function()    { return is_fun( this.fallback ) ? this.fallback() : this.fallback; },
 			set     : function( v ) {
-				console.warn( this.constructor[__classname__] + ': Over-writing `contingency` property is not allowed, please use the `fallback` property instead.' );
+				error( 'warning', {
+					instance  : this,
+					message   : this.constructor[__classname__] + ': Over-writing `contingency` property is not allowed, please use the `fallback` property instead.'
+				} );
 				return v;
 			}
 		},
@@ -724,8 +724,8 @@
 			return v;
 		},
 		test      : function()    {
-			return is_num( this.max )
-				&& is_num( this.min )
+			return is_int( this.max )
+				&& is_int( this.min )
 				&& this.max <= __lib__.MAX_ARRAY_LENGTH
 				&& this.min >= 0 // we can't have negative Array lengths silly — nb. "silly" refers to YOU, not me. ;^)
 				&& this.max >= this.min

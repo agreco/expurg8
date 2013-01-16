@@ -21,7 +21,6 @@
 
 			if ( property === null )
 				error( 'warning', {
-					classname : this.constructor[__classname__],
 					config    : config,
 					instance  : this,
 					message   : '{Name}.Schema: Invalid Property Configuration'

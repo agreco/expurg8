@@ -14,7 +14,6 @@
 	// this can be over-written to allow further customisation of a value before being passed back to the Schema
 		coerce       : function( accumulator ) {
 			accumulator instanceof Accumulator || error( 'typeerror', {
-				classname : this.constructor[__classname__],
 				config    : accumulator,
 				instance  : this,
 				message   : util.format( '{Name}.Schema.Property#coerce: expected instance of private Class — Accumulator — not: {0}', accumulator )

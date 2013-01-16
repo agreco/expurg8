@@ -3,7 +3,6 @@
 // class configuration
 			constructor : function Sanitizer( config ) {
 				this.parent( arguments ).test() || error( 'TypeError', {
-					classname     : this.constructor[__classname__],
 					configuration : config,
 					instance      : this,
 					message       : this.constructor[__classname__] + ': Invalid Configuration'

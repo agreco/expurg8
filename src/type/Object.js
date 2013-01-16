@@ -6,7 +6,10 @@
 		contingency : {
 			get     : function()    { return is_fun( this.fallback ) ? this.fallback() : this.fallback; },
 			set     : function( v ) {
-				console.warn( this.constructor[__classname__] + ': Over-writing `contingency` property is not allowed, please use the `fallback` property instead.' );
+				error( 'warning', {
+					instance  : this,
+					message   : this.constructor[__classname__] + ': Over-writing `contingency` property is not allowed, please use the `fallback` property instead.'
+				} );
 				return v;
 			}
 		},

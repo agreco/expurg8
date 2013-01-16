@@ -11,7 +11,10 @@
 		contingency : {
 			get     : function()    { return is_fun( this.fallback ) ? this.fallback() : this.fallback; },
 			set     : function( v ) {
-				console.warn( this.constructor[__classname__] + ': Over-writing `contingency` property is not allowed, please use the `fallback` property instead.' );
+				error( 'warning', {
+					instance  : this,
+					message   : this.constructor[__classname__] + ': Over-writing `contingency` property is not allowed, please use the `fallback` property instead.'
+				} );
 				return v;
 			}
 		},
@@ -172,8 +175,8 @@
 			return v;
 		},
 		test      : function()    {
-			return is_num( this.max )
-				&& is_num( this.min )
+			return is_int( this.max )
+				&& is_int( this.min )
 				&& this.max <= __lib__.MAX_ARRAY_LENGTH
 				&& this.min >= 0 // we can't have negative Array lengths silly — nb. "silly" refers to YOU, not me. ;^)
 				&& this.max >= this.min
