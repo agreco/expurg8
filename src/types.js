@@ -50,42 +50,57 @@
 		alias     : 'num number',
 		extend    : __lib__.type.Object,
 // public properties
-		fallback  :  0,
-		max       :  Number.MAX_VALUE,
-		min       : -Number.MAX_VALUE,
+		fallback  : 0,
+		max       : Number.POSITIVE_INFINITY,
+		min       : Number.NEGATIVE_INFINITY,
+		precision : __lib__.DECIMAL_PRECISION,
 // public methods
 		coerce    : function( v ) {
 			v = this.value( v );
 
 			if ( v > this.max ) v = this.max;
-			if ( v > this.min ) v = this.min;
+			if ( v < this.min ) v = this.min;
 
-			return this.parent( v );
+			return this.valid( v, true ) ? int_undo( v, this.precision ) : this.contingency;
 		},
-		valid     : function( v ) {
+		valid     : function( v, skip_int ) {
+			if ( !is_num( v ) ) return false;
+
+			var i = skip_int === true ? v : int_from( v, this.precision );
+
 			return this.parent( arguments )
-				&& v <= this.max
-				&& v >= this.min;
+				&& i <= this.max
+				&& i >= this.min
+				&& ( skip_int === true || int_undo( i, this.precision ) === v );
 		},
 // internal methods
 		init      : function() {
 			this.parent();
 
+			if ( !is_num( this.precision ) )
+				this.precision = __lib__.DECIMAL_PRECISION;
+
+			this.precision = Math.round( this.precision );
+
 			switch ( util.ntype( this.fallback ) ) {
-				case 'number' : case 'function' : break;
-				default       : this.fallback = this.value( this.fallback );
+				case 'function' : break;
+				default         : this.fallback = int_undo( this.value( this.fallback ), this.precision );
 			}
 
-			this.max = this.value( this.max );
-			this.min = this.value( this.min );
+			if ( this.max !== Number.POSITIVE_INFINITY )
+				this.max = this.value( this.max );
+			if ( this.min !== Number.NEGATIVE_INFINITY )
+				this.min = this.value( this.min );
 		},
 		test      : function() {
-			return this.valid( this.max )
-				&& this.valid( this.min )
+			return this.valid( this.max, true )
+				&& this.valid( this.min, true )
+				&& is_int( this.precision )
+				&& this.precision <= __lib__.DECIMAL_PRECISION
 				&& this.parent();
 		},
 		validType : is_num,
-		value     : parseFloat
+		value     : function( v ) { return int_from( v, this.precision ); }
 	} );
 
 
@@ -111,7 +126,7 @@
 		alias     : '[] array',
 		extend    : __lib__.type.Object,
 // public properties
-		max       : MAX_ARRAY_LENGTH,
+		max       : __lib__.MAX_ARRAY_LENGTH,
 		min       : 0,
 // public methods
 		coerce    : function( v, novalidate ) {
@@ -141,7 +156,7 @@
 		test      : function()    {
 			return is_num( this.max )
 				&& is_num( this.min )
-				&& this.max <= MAX_ARRAY_LENGTH
+				&& this.max <= __lib__.MAX_ARRAY_LENGTH
 				&& this.min >= 0 // we can't have negative Array lengths silly — nb. "silly" refers to YOU, not me. ;^)
 				&& this.max >= this.min
 				&& this.parent();

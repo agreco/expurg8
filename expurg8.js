@@ -5,17 +5,18 @@
 
 /*~  src/vars.js  ~*/
 
-	var	__classname__    = '__classname__',
-		__properties__   = '__properties__',
-		__super__        = '__super__',
-		MAX_ARRAY_LENGTH = Math.pow( 2, 32 ) - 1, UNDEF,
-		util             = lib.util,
-		__lib__          = util.obj(),
-		api, cache       = {
+	var	__classname__     = '__classname__',
+		__properties__    = '__properties__',
+		__super__         = '__super__',
+		DECIMAL_PRECISION = 17, UNDEF,
+		MAX_ARRAY_LENGTH  = Math.pow( 2, 32 ) - 1,
+		util              = lib.util,
+		__lib__           = util.obj(),
+		api, cache        = {
 			Class    : util.obj(),
 			instance : util.obj()
 		},
-		re_split_stack   = /[\r\n]+/gm;
+		re_split_stack    = /[\r\n]+/gm;
 
 
 
@@ -26,11 +27,14 @@
 //		str = String( str );
 //		return str.charAt( 0 ).toUpperCase() + str.substring( 1 );
 //	}
+	function int_from( n, p ) { return Math.round( parseFloat( n ) * parseFloat( '1e' + p ) ); }
+	function int_undo( n, p ) { return parseFloat( ( parseFloat( n ) / parseFloat( '1e' + p ) ).toPrecision( p ) ); }
 
 	function is_arr(  v )   { return util.ntype( v ) == 'array'; }
 	function is_bool( v )   { return util.ntype( v ) == 'boolean'; }
 	function is_date( v )   { return util.ntype( v ) == 'date' && !isNaN( +v ); }
 	function is_fun( v )    { return util.ntype( v ) == 'function'; }
+	function is_int( v )    { return is_num( v ) && Math.floor( v ) === v; }
 	function is_num( v )    { return util.type(  v ) == 'number'; }
 	function is_obj( v )    { return util.ntype( v ) == 'object'; }
 	function is_prop( v )   { return v instanceof __lib__.Schema.Property; }
@@ -228,21 +232,31 @@
 
 	util.iter( PACKAGE ) || ( PACKAGE = util.ENV == 'commonjs' ? module : util.global );
 
-	if ( is_obj( Object.value( PACKAGE, Name + '.api' ) ) ) {
-		api  = PACKAGE[Name].api;
+	if ( util.iter( PACKAGE[Name] ) ) {
+		if ( is_obj( Object.value( PACKAGE, Name + '.api' ) ) )
+			api  = PACKAGE[Name].api;
+
+		if ( is_num( Object.value( PACKAGE, Name + '.DECIMAL_PRECISION' ) ) )
+			DECIMAL_PRECISION = PACKAGE[Name].DECIMAL_PRECISION;
+
+		if ( is_num( Object.value( PACKAGE, Name + '.MAX_ARRAY_LENGTH' ) ) )
+			MAX_ARRAY_LENGTH = PACKAGE[Name].MAX_ARRAY_LENGTH;
+
 		delete PACKAGE[Name];
 	}
 
-	util.defs( ( __lib__ = util.expose( __lib__, Name, PACKAGE ) ), {
-		MAX_ARRAY_LENGTH : MAX_ARRAY_LENGTH,
-		api              : { value : api },
-		lib              : { value : lib },
 
-		create           : create,
-		define           : define,
-		error            : error,
-		get              : get,
-		lookup           : lookup
+	util.defs( ( __lib__ = util.expose( __lib__, Name, PACKAGE ) ), {
+		DECIMAL_PRECISION : DECIMAL_PRECISION,
+		MAX_ARRAY_LENGTH  : MAX_ARRAY_LENGTH,
+		api               : { value : api },
+		lib               : { value : lib },
+
+		create            : create,
+		define            : define,
+		error             : error,
+		get               : get,
+		lookup            : lookup
 	}, 'w', true );
 
 	util.x( Object, Array, Boolean, Function );
@@ -550,6 +564,7 @@
 		fallback    : null,
 // public methods
 		coerce      : function( v ) { return this.valid( v = this.value( v ) ) ? v : this.contingency; },
+		stringify   : function( v ) { return JSON.stringify( this.coerce( v ) ); },
 		valid       : function( v ) { return this.validType( v ); },
 // internal methods
 		test        : function()    { return this.valid( this.contingency ); },
@@ -581,37 +596,57 @@
 		alias     : 'num number',
 		extend    : __lib__.type.Object,
 // public properties
-		fallback  :  0,
-		max       :  Number.MAX_VALUE,
-		min       : -Number.MAX_VALUE,
+		fallback  : 0,
+		max       : Number.POSITIVE_INFINITY,
+		min       : Number.NEGATIVE_INFINITY,
+		precision : __lib__.DECIMAL_PRECISION,
 // public methods
 		coerce    : function( v ) {
 			v = this.value( v );
 
 			if ( v > this.max ) v = this.max;
-			if ( v > this.min ) v = this.min;
+			if ( v < this.min ) v = this.min;
 
-			return this.parent( v );
+			return this.valid( v, true ) ? int_undo( v, this.precision ) : this.contingency;
 		},
-		valid     : function( v ) {
+		valid     : function( v, skip_int ) {
+			if ( !is_num( v ) ) return false;
+
+			var i = skip_int === true ? v : int_from( v, this.precision );
+
 			return this.parent( arguments )
-				&& v <= this.max
-				&& v >= this.min;
+				&& i <= this.max
+				&& i >= this.min
+				&& ( skip_int === true || int_undo( i, this.precision ) === v );
 		},
 // internal methods
 		init      : function() {
 			this.parent();
 
-			this.max = this.value( this.max );
-			this.min = this.value( this.min );
+			if ( !is_num( this.precision ) )
+				this.precision = __lib__.DECIMAL_PRECISION;
+
+			this.precision = Math.round( this.precision );
+
+			switch ( util.ntype( this.fallback ) ) {
+				case 'function' : break;
+				default         : this.fallback = int_undo( this.value( this.fallback ), this.precision );
+			}
+
+			if ( this.max !== Number.POSITIVE_INFINITY )
+				this.max = this.value( this.max );
+			if ( this.min !== Number.NEGATIVE_INFINITY )
+				this.min = this.value( this.min );
 		},
 		test      : function() {
-			return this.valid( this.max )
-				&& this.valid( this.min )
+			return this.valid( this.max, true )
+				&& this.valid( this.min, true )
+				&& is_int( this.precision )
+				&& this.precision <= __lib__.DECIMAL_PRECISION
 				&& this.parent();
 		},
 		validType : is_num,
-		value     : parseFloat
+		value     : function( v ) { return int_from( v, this.precision ); }
 	} );
 
 
@@ -637,7 +672,7 @@
 		alias     : '[] array',
 		extend    : __lib__.type.Object,
 // public properties
-		max       : MAX_ARRAY_LENGTH,
+		max       : __lib__.MAX_ARRAY_LENGTH,
 		min       : 0,
 // public methods
 		coerce    : function( v, novalidate ) {
@@ -667,7 +702,7 @@
 		test      : function()    {
 			return is_num( this.max )
 				&& is_num( this.min )
-				&& this.max <= MAX_ARRAY_LENGTH
+				&& this.max <= __lib__.MAX_ARRAY_LENGTH
 				&& this.min >= 0 // we can't have negative Array lengths silly — nb. "silly" refers to YOU, not me. ;^)
 				&& this.max >= this.min
 				&& this.parent();
@@ -812,6 +847,7 @@
 
 			return v;
 		},
+		stringify   : function( v ) { return api.date.format( this.coerce( v ), this.format ); },
 		valid     : function( v ) { return this.parent( arguments ) && api.date.between( v, this.min, this.max ); },
 // internal methods
 		fallback  : function() { return new Date; },

@@ -3,11 +3,14 @@
 //		str = String( str );
 //		return str.charAt( 0 ).toUpperCase() + str.substring( 1 );
 //	}
+	function int_from( n, p ) { return Math.round( parseFloat( n ) * parseFloat( '1e' + p ) ); }
+	function int_undo( n, p ) { return parseFloat( ( parseFloat( n ) / parseFloat( '1e' + p ) ).toPrecision( p ) ); }
 
 	function is_arr(  v )   { return util.ntype( v ) == 'array'; }
 	function is_bool( v )   { return util.ntype( v ) == 'boolean'; }
 	function is_date( v )   { return util.ntype( v ) == 'date' && !isNaN( +v ); }
 	function is_fun( v )    { return util.ntype( v ) == 'function'; }
+	function is_int( v )    { return is_num( v ) && Math.floor( v ) === v; }
 	function is_num( v )    { return util.type(  v ) == 'number'; }
 	function is_obj( v )    { return util.ntype( v ) == 'object'; }
 	function is_prop( v )   { return v instanceof __lib__.Schema.Property; }
