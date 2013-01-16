@@ -1,0 +1,12 @@
+{
+	"source"    : {
+		"dir"   : "./",
+		"files" : ["Object", "Boolean", "Number", "Integer", "Array", "Collection", "String", "Enum", "Date"]
+	},
+	"target"    : {
+		"dir"   : "../",
+		"min"   : false,
+		"name"  : "types"
+	},
+	"type"      : "application/javascript"
+}

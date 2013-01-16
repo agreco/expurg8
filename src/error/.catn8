@@ -1,0 +1,12 @@
+{
+	"source"    : {
+		"dir"   : "./",
+		"files" : ["Exception", "RangeException", "TypeException", "Warning"]
+	},
+	"target"    : {
+		"dir"   : "../",
+		"min"   : false,
+		"name"  : "exceptions"
+	},
+	"type"      : "application/javascript"
+}

@@ -1,0 +1,11 @@
+{
+	"source"    : {
+		"dir"   : "./src",
+		"files" :  ["vars", "util", "lib", "api", "expose", "Sanitizer", "Accumulator", "Schema", "Property", "types", "exceptions"]
+	},
+	"target"    : {
+		"dir"   : "{pwd}",
+		"min"   : true
+	},
+	"type"      : "application/javascript"
+}

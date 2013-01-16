@@ -1,0 +1,36 @@
+{
+	"author"          : {
+		"name"        : "constantology",
+		"email"       : "christos@muigui.com",
+		"url"         : "http://muigui.com"
+	},
+	"dependencies"    : {
+		"d8"          : ">= 0.4.1",
+		"id8"         : ">= 0.2.6",
+		"m8"          : ">= 0.3.8"
+	},
+	"description"     : "",
+ 	"devDependencies" : {
+		"catn8"       : ">= 0.0.4",
+		"chai"        : ">= 1.2.0",
+		"mocha"       : ">= 1.4.2"
+ 	},
+ 	"engines"         : {
+ 		"node"        : ">= 0.8.x"
+ 	},
+	"keywords"        : [],
+	"licenses"        : [ {
+		"type"        : "MIT",
+		"url"         : "https://raw.github.com/constantology/expurg8/master/LICENSE"
+	} ],
+	"main"            : "./expurg8",
+	"name"            : "expurg8",
+	"repository"      : {
+		"type"        : "git",
+		"url"         : "git@github.com:constantology/expurg8.git"
+	},
+	"scripts"         : {
+		"test"        : "mocha -c --ignore-leaks -R spec -u tdd ./test/*.test.js"
+	},
+	"version"         : "0.0.1"
+}

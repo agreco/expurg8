@@ -1,0 +1,12 @@
+{
+	"source"    : {
+		"dir"   : "./",
+		"files" : ["vars", "util", "lib", "api", "expose", "Sanitizer", "Accumulator", "Schema", "Property", "types", "exceptions"]
+	},
+	"target"    : {
+		"dir"   : "../",
+		"min"   : true,
+		"name"  : "expurg8"
+	},
+	"type"      : "application/javascript"
+}
