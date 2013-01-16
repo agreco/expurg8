@@ -10,6 +10,7 @@ typeof chai    !== 'undefined' || ( chai    = require( 'chai' ) );
 typeof expect  != 'undefined'  || ( expect  = chai.expect );
 
 suite( 'expurg8.type.Date', function() {
+	var UNDEF;
 
 	test( 'throws error when `test` fails', function( done ) {
 		var config = { fallback : Date.now() };

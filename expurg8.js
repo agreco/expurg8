@@ -700,7 +700,7 @@
 		min       : 0,
 // public methods
 		coerce    : function( v, novalidate ) {
-			v = this.prune( this.value( v ) );
+			v = this.prune( this.value( arguments ) );
 
 			return novalidate === true || this.valid( v ) ? v : this.contingency;
 		},
@@ -720,6 +720,11 @@
 		prune     : function( v ) {
 			if ( v.length > this.max ) // if the length of the coerced Array is greater than the max
 				v.length = this.max;   // length allowed, we can simply crop it down before validating.
+
+			if ( v.length < this.min ) {
+				var extra = this.contingency.slice( 0, this.min - v.length );
+				v.push.apply( v, extra );
+			}
 
 			return v;
 		},

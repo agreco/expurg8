@@ -10,6 +10,7 @@ typeof chai    !== 'undefined' || ( chai    = require( 'chai' ) );
 typeof expect  != 'undefined'  || ( expect  = chai.expect );
 
 suite( 'expurg8.type.Collection', function() {
+	var UNDEF;
 
 	test( 'throws error when `test` fails', function( done ) {
 		expect( true ).to.be.true;
