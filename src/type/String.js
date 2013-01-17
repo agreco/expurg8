@@ -24,15 +24,28 @@
 				this.pattern = null;
 		},
 		prune     : function( v ) {
-			if ( v.length > this.max )
-				v = v.substring( 0, this.max );
+			if ( this.validType( v ) ) {
+				if ( v.length > this.max )
+					v = v.substring( 0, this.max );
+
+				if ( v.length < this.min )
+					v += this.contingency.substring( 0, this.min - v.length );
+			}
 
 			return v;
 		},
 		validStr  : return_true,
 		validType : is_str,
 		value     : function( v ) {
-			v = is_str( v ) ? v : String( v );
+			switch ( util.ntype( v ) ) {
+				case 'string' : break;
+				case 'null'   : case 'undefined' : return this.contingency;
+				default       :
+					if ( util.tostr( v ) === v.toString() )
+						return this.contingency;
+
+					v = v.toString();
+			}
 
 			v = this.trim === false ? v : v.trim();
 

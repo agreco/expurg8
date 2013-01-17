@@ -187,12 +187,14 @@
 			this.min = this.min >>> 0;
 		},
 		prune     : function( v ) {
-			if ( v.length > this.max ) // if the length of the coerced Array is greater than the max
-				v.length = this.max;   // length allowed, we can simply crop it down before validating.
+			if ( this.validType( v ) ) {
+				if ( v.length > this.max ) // if the length of the coerced Array is greater than the max
+					v.length = this.max;   // length allowed, we can simply crop it down before validating.
 
-			if ( v.length < this.min ) {
-				var extra = this.contingency.slice( 0, this.min - v.length );
-				v.push.apply( v, extra );
+				if ( v.length < this.min ) {
+					var extra = this.contingency.slice( 0, this.min - v.length );
+					v.push.apply( v, extra );
+				}
 			}
 
 			return v;
@@ -292,15 +294,28 @@
 				this.pattern = null;
 		},
 		prune     : function( v ) {
-			if ( v.length > this.max )
-				v = v.substring( 0, this.max );
+			if ( this.validType( v ) ) {
+				if ( v.length > this.max )
+					v = v.substring( 0, this.max );
+
+				if ( v.length < this.min )
+					v += this.contingency.substring( 0, this.min - v.length );
+			}
 
 			return v;
 		},
 		validStr  : return_true,
 		validType : is_str,
 		value     : function( v ) {
-			v = is_str( v ) ? v : String( v );
+			switch ( util.ntype( v ) ) {
+				case 'string' : break;
+				case 'null'   : case 'undefined' : return this.contingency;
+				default       :
+					if ( util.tostr( v ) === v.toString() )
+						return this.contingency;
+
+					v = v.toString();
+			}
 
 			v = this.trim === false ? v : v.trim();
 
