@@ -7,7 +7,7 @@
 		min       : 0,
 // public methods
 		coerce    : function( v, novalidate ) {
-			v = this.prune( this.value( arguments ) );
+			v = this.prune( this.value( v ) );
 
 			return novalidate === true || this.valid( v ) ? v : this.contingency;
 		},
@@ -44,5 +44,7 @@
 				&& this.parent();
 		},
 		validType : is_arr,
-		value     : function( v ) { return this.validType( v ) ? v : Array.coerce( v ); }
+		value     : function( v ) {
+			return this.validType( v ) ? v : Array.coerce( v );
+		}
 	} );

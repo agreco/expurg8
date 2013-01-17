@@ -20,13 +20,25 @@
 		},
 		fallback    : null,
 // public methods
-		coerce      : function( v ) { return this.valid( v = this.value( v ) ) ? v : this.contingency; },
-		stringify   : function( v ) { return JSON.stringify( this.coerce( v ) ); },
-		valid       : function( v ) { return this.validType( v ); },
+		coerce      : function( v ) {
+			return this.valid( v = this.value( v ) ) ? v : this.contingency;
+		},
+		stringify   : function( v ) {
+			return JSON.stringify( this.coerce( v ) );
+		},
+		valid       : function( v ) {
+			return this.validType( v );
+		},
 // internal methods
-		test        : function()    { return this.valid( this.contingency ); },
-		validType   : function( v ) { return v !== UNDEF; },
-		value       : function( v ) { return v === UNDEF ? this.contingency : v; }
+		test        : function()    {
+			return this.valid( this.contingency );
+		},
+		validType   : function( v ) {
+			return v !== UNDEF;
+		},
+		value       : function( v ) {
+			return v === UNDEF ? this.contingency : v;
+		}
 	} );
 
 
@@ -104,7 +116,9 @@
 				&& this.parent();
 		},
 		validType : is_num,
-		value     : function( v ) { return int_from( v, this.precision ); }
+		value     : function( v ) {
+			return int_from( v, this.precision );
+		}
 	} );
 
 
@@ -118,7 +132,9 @@
 // public properties
 		precision : 0,
 // public methods
-		valid     : function( v ) { return this.parent( v, true ) && Math.floor( v ) === v; },
+		valid     : function( v ) {
+			return this.parent( v, true ) && Math.floor( v ) === v;
+		},
 // internal methods
 		init      : function()    {
 			var max = this.max, min = this.min;
@@ -135,7 +151,9 @@
 				this.min = min;
 
 		},
-		value     : function( v ) { return Math.round( this.parent( arguments ) ); }
+		value     : function( v ) {
+			return Math.round( this.parent( arguments ) );
+		}
 	} );
 
 
@@ -151,7 +169,7 @@
 		min       : 0,
 // public methods
 		coerce    : function( v, novalidate ) {
-			v = this.prune( this.value( arguments ) );
+			v = this.prune( this.value( v ) );
 
 			return novalidate === true || this.valid( v ) ? v : this.contingency;
 		},
@@ -188,7 +206,9 @@
 				&& this.parent();
 		},
 		validType : is_arr,
-		value     : function( v ) { return this.validType( v ) ? v : Array.coerce( v ); }
+		value     : function( v ) {
+			return this.validType( v ) ? v : Array.coerce( v );
+		}
 	} );
 
 
@@ -200,7 +220,7 @@
 		alias      : 'collection',
 		extend     : __lib__.type.Array,
 // public properties
-		itemType   : 'object',
+		itemType   : null,
 // public methods
 		coerce     : function( v ) {
 			v = this.parent( v, true );
@@ -210,9 +230,13 @@
 
 			return this.valid( v ) ? v : this.contingency;
 		},
-		valid      : function( v ) { return this.parent( arguments ) && v.every( this.validItem, this ); },
+		valid      : function( v ) {
+			return this.parent( arguments ) && v.every( this.validItem, this );
+		},
 // internal methods
-		coerceItem : function( v ) { return this.itemType.coerce( v ); },
+		coerceItem : function( v ) {
+			return this.itemType.coerce( v );
+		},
 		init       : function()    {
 			this.parent();
 
@@ -230,8 +254,12 @@
 	// we don't want this to be changed willy-nilly so make it read-only
 			util.def( this, 'itemType', { value : item_type }, 'e', true );
 		},
-		test       : function()    { return this.itemType instanceof __lib__.Sanitizer && this.parent(); },
-		validItem  : function( v ) { return this.itemType.valid( v ); }
+		test       : function()    {
+			return this.itemType instanceof __lib__.Sanitizer && this.parent();
+		},
+		validItem  : function( v ) {
+			return this.itemType.valid( v );
+		}
 	} );
 
 
@@ -248,7 +276,9 @@
 		pattern   : null,
 		trim      : true,
 // public methods
-		valid     : function( v ) { return this.parent( arguments ) && this.validStr( v ); },
+		valid     : function( v ) {
+			return this.parent( arguments ) && ( ( v.length === 0 && this.min === 0 ) || this.validStr( v ) );
+		},
 // internal methods
 		init      : function()    {
 			this.parent();
@@ -303,7 +333,9 @@
 			if ( is_str( this.list ) )
 				this.list = this.list.split( ' ' );
 		},
-		test     : function()    { return is_arr( this.list ) && this.parent(); }
+		test     : function()    {
+			return is_arr( this.list ) && this.parent();
+		}
 	} );
 
 
@@ -327,8 +359,12 @@
 
 			return v;
 		},
-		stringify   : function( v ) { return api.date.format( this.coerce( v ), this.format ); },
-		valid     : function( v ) { return this.parent( arguments ) && api.date.between( v, this.min, this.max ); },
+		stringify   : function( v ) {
+			return api.date.format( this.coerce( v ), this.format );
+		},
+		valid     : function( v ) {
+			return this.parent( arguments ) && api.date.between( v, this.min, this.max );
+		},
 // internal methods
 		fallback  : function() { return new Date; },
 		init      : function() {

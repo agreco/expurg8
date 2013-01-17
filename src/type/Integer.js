@@ -5,7 +5,9 @@
 // public properties
 		precision : 0,
 // public methods
-		valid     : function( v ) { return this.parent( v, true ) && Math.floor( v ) === v; },
+		valid     : function( v ) {
+			return this.parent( v, true ) && Math.floor( v ) === v;
+		},
 // internal methods
 		init      : function()    {
 			var max = this.max, min = this.min;
@@ -22,5 +24,7 @@
 				this.min = min;
 
 		},
-		value     : function( v ) { return Math.round( this.parent( arguments ) ); }
+		value     : function( v ) {
+			return Math.round( this.parent( arguments ) );
+		}
 	} );

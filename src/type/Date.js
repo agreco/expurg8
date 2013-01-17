@@ -15,8 +15,12 @@
 
 			return v;
 		},
-		stringify   : function( v ) { return api.date.format( this.coerce( v ), this.format ); },
-		valid     : function( v ) { return this.parent( arguments ) && api.date.between( v, this.min, this.max ); },
+		stringify   : function( v ) {
+			return api.date.format( this.coerce( v ), this.format );
+		},
+		valid     : function( v ) {
+			return this.parent( arguments ) && api.date.between( v, this.min, this.max );
+		},
 // internal methods
 		fallback  : function() { return new Date; },
 		init      : function() {

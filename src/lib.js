@@ -2,6 +2,9 @@
 		if ( is_obj( classname ) && !config ) {
 			config    = classname;
 			classname = config.classname; delete config.classname;
+			if ( !classname && config.type ) {
+				classname = config.type;  delete config.type;
+			}
 		}
 
 		if ( !is_obj( config ) ) config = util.obj();
@@ -21,13 +24,13 @@
 			Class = cache.Class[classname] || lib.get( classname ) || lib.get( namespace( classname ) );
 
 			if ( !Class || !( Class.prototype instanceof __lib__.Sanitizer ) )
-				err = '{0}No Class found with name: {1}.';
+				err = '{0}.create: No Class found with name: {1}.';
 		}
 		else
-			err = '{0}Invalid Class name. Expected the name of an existing {Name}.Sanitizer Class instead received: {1}';
+			err = '{0}.create: Invalid Class name. Expected the name of an existing {0}.Sanitizer Class instead received: {1}';
 
 		!err || error( {
-			classname : classname, configuration : config, message : util.format( err, '{Name}.create: ', classname )
+			classname : classname, configuration : config, message : util.format( err, '{Name}', classname )
 		} );
 
 		return Class ? new Class( config ) : null;

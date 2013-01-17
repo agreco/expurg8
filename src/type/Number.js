@@ -54,5 +54,7 @@
 				&& this.parent();
 		},
 		validType : is_num,
-		value     : function( v ) { return int_from( v, this.precision ); }
+		value     : function( v ) {
+			return int_from( v, this.precision );
+		}
 	} );

@@ -19,5 +19,7 @@
 			if ( is_str( this.list ) )
 				this.list = this.list.split( ' ' );
 		},
-		test     : function()    { return is_arr( this.list ) && this.parent(); }
+		test     : function()    {
+			return is_arr( this.list ) && this.parent();
+		}
 	} );

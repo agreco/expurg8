@@ -3,7 +3,7 @@
 		alias      : 'collection',
 		extend     : __lib__.type.Array,
 // public properties
-		itemType   : 'object',
+		itemType   : null,
 // public methods
 		coerce     : function( v ) {
 			v = this.parent( v, true );
@@ -13,9 +13,13 @@
 
 			return this.valid( v ) ? v : this.contingency;
 		},
-		valid      : function( v ) { return this.parent( arguments ) && v.every( this.validItem, this ); },
+		valid      : function( v ) {
+			return this.parent( arguments ) && v.every( this.validItem, this );
+		},
 // internal methods
-		coerceItem : function( v ) { return this.itemType.coerce( v ); },
+		coerceItem : function( v ) {
+			return this.itemType.coerce( v );
+		},
 		init       : function()    {
 			this.parent();
 
@@ -33,6 +37,10 @@
 	// we don't want this to be changed willy-nilly so make it read-only
 			util.def( this, 'itemType', { value : item_type }, 'e', true );
 		},
-		test       : function()    { return this.itemType instanceof __lib__.Sanitizer && this.parent(); },
-		validItem  : function( v ) { return this.itemType.valid( v ); }
+		test       : function()    {
+			return this.itemType instanceof __lib__.Sanitizer && this.parent();
+		},
+		validItem  : function( v ) {
+			return this.itemType.valid( v );
+		}
 	} );

@@ -77,6 +77,7 @@ suite( 'expurg8.type.Array', function() {
 		var type = expurg8.create( '[]' );
 		expect( type.contingency ).to.be.a( 'array' );
 		expect( type.contingency ).to.eql( [] );
+		expect( type.contingency ).to.not.equal( type.contingency );
 
 		type = expurg8.create( '[]', { fallback : function() { return [1,2,3]; } } );
 		expect( type.contingency ).to.eql( [1,2,3] );
@@ -88,6 +89,7 @@ suite( 'expurg8.type.Array', function() {
 			max         : 3
 		} );
 		expect( type.contingency ).to.eql( [1,2,3] );
+		expect( type.contingency ).to.not.equal( type.contingency );
 
 		done();
 	} );

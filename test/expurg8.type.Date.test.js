@@ -43,9 +43,13 @@ suite( 'expurg8.type.Date', function() {
 	} );
 
 	test( 'contingency/fallback', function( done ) {
-		var type = expurg8.create( 'date' );
+		var type = expurg8.create( 'date', {
+			fallback : function() {
+				return new Date( 2012, 0, 1 );
+			}
+		} );
 		expect( type.contingency ).to.be.a( 'date' );
-		expect( +type.contingency ).to.equal( Date.now() );
+		expect( +type.contingency ).to.equal( +( new Date( 2012, 0, 1 ) ) );
 
 		type = expurg8.create( 'date', { fallback : '2012-01-01T00:00:00.000Z' } );
 		expect( +type.contingency ).to.equal( +( new Date( 2012, 0, 1 ) ) );

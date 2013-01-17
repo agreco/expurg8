@@ -8,7 +8,9 @@
 		pattern   : null,
 		trim      : true,
 // public methods
-		valid     : function( v ) { return this.parent( arguments ) && this.validStr( v ); },
+		valid     : function( v ) {
+			return this.parent( arguments ) && ( ( v.length === 0 && this.min === 0 ) || this.validStr( v ) );
+		},
 // internal methods
 		init      : function()    {
 			this.parent();
