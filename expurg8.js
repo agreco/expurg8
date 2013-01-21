@@ -6,10 +6,18 @@
 /*~  src/vars.js  ~*/
 
 	var	__classname__     = '__classname__',
+//		__errors__        = '__errors__',
 		__properties__    = '__properties__',
 		__super__         = '__super__',
-		DECIMAL_PRECISION = 17, UNDEF,
-		MAX_ARRAY_LENGTH  = Math.pow( 2, 32 ) - 1,
+		DECIMAL_PRECISION = 17,
+		MAX_ARRAY_LENGTH  = -1 >>> 0, // same as `Math.pow( 2, 32 ) - 1`
+		STRICT, UNDEF,
+		STRICT_MODE       = {
+			ERROR         : 4,
+			FALLBACK      : 1,
+			WARN          : 2
+		},
+		STRICT_MODE_VAL   = Object.values( STRICT_MODE ),
 		util              = lib.util,
 		__lib__           = util.obj(),
 		api, cache        = {
@@ -113,6 +121,8 @@
 			desc.module = __lib__;
 		if ( desc.module === __lib__ )
 			name = namespace( name );
+		if ( is_str( desc.extend ) && desc.extend.toLowerCase() in cache.Class )
+			desc.extend = cache.Class[desc.extend.toLowerCase()];
 
 		var alias = desc.alias; delete desc.alias;
 
@@ -199,7 +209,12 @@
 	}
 
 	function register( Class, aliases ) {
-		aliases.unshift( Class[__classname__] );
+		var cn = Class[__classname__];
+
+		aliases.unshift( cn );
+
+		cn.indexOf( Name + '.' ) !== 0 || aliases.push( cn.split( '.' ).slice( 1 ).join( '.' ) );
+
 		return aliases.reduce( reg_alias, Class );
 	}
 
@@ -251,6 +266,12 @@
 		if ( is_num( Object.value( PACKAGE, Name + '.MAX_ARRAY_LENGTH' ) ) )
 			MAX_ARRAY_LENGTH = PACKAGE[Name].MAX_ARRAY_LENGTH;
 
+		if ( Object.value( PACKAGE, Name + '.STRICT' ) ) {
+			STRICT = PACKAGE[Name].STRICT;
+			if ( !( STRICT in STRICT_MODE ) && !~STRICT_MODE_VAL.indexOf( STRICT ) )
+				STRICT = STRICT_MODE.FALLBACK;
+		}
+
 		delete PACKAGE[Name];
 	}
 
@@ -258,6 +279,9 @@
 	util.defs( ( __lib__ = util.expose( __lib__, Name, PACKAGE ) ), {
 		DECIMAL_PRECISION : DECIMAL_PRECISION,
 		MAX_ARRAY_LENGTH  : MAX_ARRAY_LENGTH,
+		STRICT_MODE       : { value : STRICT_MODE },
+		STRICT            : STRICT,
+
 		api               : { value : api },
 		lib               : { value : lib },
 
@@ -281,7 +305,7 @@
 				this.parent( arguments ).test() || error( 'TypeError', {
 					configuration : config,
 					instance      : this,
-					message       : this.constructor[__classname__] + ': Invalid Configuration'
+					message       : this.constructor[__classname__] + ( this.id ? '#' + this.id : '' ) + ': Invalid Configuration'
 				} );
 
 				reg_instance( this );
@@ -289,9 +313,11 @@
 			alias       : null,
 // public properties
 			id          : null,
+			strict      : __lib__.STRICT,
 // public methods
 			coerce      : function( v ) { return this.valid( v = this.value( v ) ) ? v : null; },
 			destroy     : function()    { unreg_instance( this ).parent( arguments ); },
+			sanitize    : function( accumulator ) { return accumulator; },
 			valid       : function( v ) { return true; },
 // internal methods
 			test        : function()    { return this.valid(); },
@@ -306,7 +332,7 @@
 	function Accumulator( schema, data, value ) {
 		this.schema = schema;
 		this.data   = data;
-		this.value  = value || ( is_arr( raw ) ? [] : util.obj() );
+		this.value  = value || ( is_arr( data ) ? [] : util.obj() );
 	}
 
 	Accumulator.prototype = {
@@ -374,7 +400,7 @@
 	// this handles Schema's being able to inherit their supers' `properties` correctly
 		// NB. the reason we are not creating instance of Schema.Property in here is so that each property
 		//     can be either over-written or have its configurations tweaked when the Schema is instantiated
-			afterdefine    : function( Class ) {
+			afterdefine       : function( Class ) {
 				var Super = Class[__super__],
 					props = Class.prototype.properties;
 
@@ -390,58 +416,87 @@
 
 				util.def( Class,
 						__properties__,
-						{ value : is_obj( Super[__properties__] ) ? util.update( props, Super[__properties__] ) : props },
+						{ value : is_obj( Super[__properties__] ) ? util.merge( util.merge( Super[__properties__] ), props ) : props },
 						 'r',
 						  true );
 			},
 	// this handles allowing Schema's to have their `properties` rejigged as well as ensuring
 	// any `properties` defined when the Schema was created are added to the the instance
 	// without risking any of the pitfalls created from adding non-primitives to Function prototypes
-			beforeinstance : function( Class, instance, args ) {
-				var config = is_obj( args[0] ) ? args[0] : args[0] = { properties : util.obj() };
+			beforeinstance    : function( Class, instance, args ) {
+				var config = is_obj( args[0] ) ? args[0] : args[0] = { properties : util.obj() },
+					props  = config.properties;
 
-				if ( is_arr( config.properties ) )
-					config.properties = config.properties.reduce( to_property_map.bind( Class ), util.obj() );
+				if ( is_arr( props ) )
+					props = props.reduce( to_property_map.bind( Class ), util.obj() );
 
-				if ( !is_obj( config.properties ) )
-					config.properties = util.obj();
+				if ( !is_obj( props ) )
+					props = util.obj();
 
-				!is_obj( Class[__properties__] ) || util.update( config.properties, Class[__properties__] );
+				if ( is_obj( Class[__properties__] ) )
+					props = util.merge( util.merge( Class[__properties__] ), props );
 
-				config.properties = Object.reduce( config.properties, to_property_array.bind( this ), [] );
+				config.properties = Object.reduce( props, to_property_array.bind( this ), [] );
 			},
 // class configuration
-			alias          : 'schema',
-			extend         : __lib__.Sanitizer,
+			extend            : __lib__.Sanitizer,
 // public properties
-			cast           : null,
-			properties     : null,
+			attribute         : null,
+			cast              : null,
+			properties        : null,
+			sanitizeProperty_ : null, // Array#reduce doesn't supply a context param, so we need to set this in `init`
 // public methods
-			coerce         : function( v ) {
-				return this.properties.reduce( this.aggregate, new Accumulator( this, v, this.value( v ) ) ).value;
-			},
-			valid          : function( v ) { return this.properties.every( this.validProperty, v ); },
-// internal methods
-			aggregate      : function( accumulator, property ) {
-				property.coerce( accumulator );
+			coerce            : function( v ) {
+				var SM          = STRICT_MODE,
+					strict      = this.strict,
+					val         = this.sanitize( this.accumulator( v ) ).value;
 
-				return accumulator;
+				strict === SM.FALLBACK || this.valid( val ) || error( strict === SM.ERROR ? 'error' : 'warning', {
+					data     : v,
+					value    : val,
+					instance : this,
+					message  : this.constructor[__classname__] + ': Invalid coercion.'
+				} );
+
+				return val;
 			},
-			init           : function()    {
+			sanitize          : function ( accumulator ) {
+				return this.properties.reduce( this.sanitizeProperty_, accumulator );
+			},
+			valid             : function( v ) {
+				return this.properties.every( this.validProperty.bind( this, v ) );
+			},
+// internal methods
+			accumulator       : function( v ) {
+				return new Accumulator( this, v, this.value( v ) )
+			},
+			init              : function()    {
 	// `this.properties` should always be an Array because of the `beforeinstance` catch all
 	// it should be technically impossible for it to not be an Array; the only way for it to not be would be to
 	// explicitly call expurg8.Schema.Property.prototype.init without creating an instance, in which case: WHY!!??
+	// `this.attribute` is a map of the `this.properties` Array using the Schema.Property `id` as the key.
+				this.attribute  = util.obj();
 				this.properties = this.properties.map( this.initProperty, this );
+
+				util.def( this, 'sanitizeProperty_', this.sanitizeProperty.bind( this ), 'w', true );
+
+				this.parent();
 			},
-			initProperty   : function( property ) {
-				return is_prop( property ) ? property : create( 'property', util.copy( property, { schema : this } ) );
+			initProperty      : function( prop ) {
+				var property = is_prop( prop ) ? prop : create( 'property', util.copy( prop, { schema : this } ) );
+				return this.attribute[property.id] = property;
+			},
+			sanitizeProperty  : function( accumulator, property ) {
+				return property.sanitize( accumulator );
 			},
 	// NB we don't need to test each property as they will test themselves on instantiation
-			test           : function()    {
+			test              : function()    {
 				return is_arr( this.properties ) && !!this.properties.length && this.properties.every( is_prop );
 			},
-			validProperty  : function( property ) { return property.valid( this ); },
-			value          : function( v ) {
+			validProperty     : function( v, property ) {
+				return property.valid( v );
+			},
+			value             : function( v ) {
 				switch ( util.ntype( this.cast ) ) {
 					case 'function' : return this.cast();
 					case 'string'   : switch ( this.cast ) {
@@ -454,6 +509,55 @@
 			}
 		};
 	}()  );
+
+
+
+/*~  src/validation.js  ~*/
+
+
+
+
+/*~  src/validation/MinMax.js  ~*/
+
+	define( 'validation.MinMax', {
+// class configuration
+		alias   : 'minmax',
+// public properties
+		hasMany : false,
+		max     : 1,
+		min     : 0,
+// public methods
+		coerce  : function( v ) { return this.prune( v.map( this.type.coerce, this.type ) ); },
+		valid   : function( v ) {
+			return this.hasMany
+				? is_arr( v ) && v.length >= this.min && v.length <= this.max
+				: !is_arr( v ) || ( lib.is( this.type, Name + '.type.Array' ) && !lib.is( this.type, Name + '.type.String' ) );
+		},
+// internal methods
+	// if the property is singular & not required -> min = 0, max = 1
+	// if the property is singular & required     -> min = 1, max = 1
+	// if the property is multiple & not required -> min = 0, max = N
+	// if the property is multiple & required     -> min = M, max = N
+		init    : function()    {
+			this.max = this.max >>> 0;
+			this.min = this.min >>> 0;
+
+			this.hasMany = this.max > 1;
+		},
+		prune        : function( v ) {
+			if ( v.length > this.max ) // if the length is greater than the max length allowed,
+				v.length = this.max;   // we can simply crop it down before validating.
+
+			return v;
+		},
+		test    : function()    {
+			return is_num( this.max )   && is_num( this.min )
+				&& this.max >= this.min && this.min >= 0
+		}
+	} );
+
+
+
 
 
 
@@ -473,39 +577,40 @@
 		type         : null,
 // public methods
 	// this can be over-written to allow further customisation of a value before being passed back to the Schema
-		coerce       : function( accumulator ) {
-			accumulator instanceof Accumulator || error( 'typeerror', {
-				config    : accumulator,
-				instance  : this,
-				message   : util.format( '{Name}.Schema.Property#coerce: expected instance of private Class — Accumulator — not: {0}', accumulator )
-			} );
-
+		coerce       : function( v ) {
+			return this.type.coerce( v );
+		},
+		sanitize     : function( accumulator ) {
 			var v = this.value( accumulator.data );
 
 			v = this.hasMany
-			  ? this.mixin( 'minmax', [v] )
-			  : this.type.coerce( v );
+			  ? this.$mx.minmax.coerce.call( this, v ) //mixin( 'minmax', [v] )
+			  : this.coerce( v );
 
 			this.assign( accumulator.value, v );
 
 			return accumulator;
 		},
-		valid        : function( v ) { return this.mixin( 'minmax', arguments ); },
+		valid        : function( data ) {
+			var v = Object.value( data, this.id );
+			return this.mixin( 'minmax', [v] ) && ( this.hasMany ? v.every( this.type.valid, this ) : this.type.valid( v ) );
+		},
 // internal methods
 		assign       : function( val, v ) {
-			var root = is_arr( this._path ) ? util.bless( this._path, val ) : val;
+			var root = this._path ? util.bless( this._path, val ) : val;
 
 			root[this._id] = v;
 
 			return val;
 		},
 		init         : function()    {
-			this.initType( this.type )
-				.initMappings( this.cite, this.id )
+			this.initMappings( this.cite, this.id )
+				.initType( this.type )
+				.parent()
 				.mixin( 'minmax' );
 		},
 		initMappings : function( cite, id ) {
-			if ( !is_str( cite ) )
+			if ( !is_str( cite ) && !is_num( cite ) )
 				cite = id;
 
 			this.cite = cite;
@@ -516,7 +621,7 @@
 				this._id  = path.pop();
 
 				if ( path.length )
-					this._path = path;
+					this._path = path.join( '.' );
 			}
 			else this._id = this.id;
 		},
@@ -537,13 +642,20 @@
 			}
 
 			this.type = type;
+//                                          // `util` — m8 — is a Function that returns the first parameter in its
+//			if ( is_schema( this.type ) ) // `arguments` "Array": in the case that `type` is a Schema, we want to pass
+//				this.value = util;        // the `accumulator` itself; not the unprocessed value to the Schema.
 		},
 		test         : function()    { // NB we don't need to test the type as it will test itself on instantiation
 			return ( is_type( this.type ) || is_schema( this.type ) )
 				&& ( is_str( this._id )   || is_num( this._id ) )
 				&& this.mixin( 'minmax' );
 		},
-		value        : function( v ) { return Object.value( v, this.cite ); }
+		value        : function( v ) {
+			var val = Object.value( v, this.cite );
+
+			return this.hasMany ? is_arr( val ) ? val : [val] : val;
+		}
 	} );
 
 
@@ -914,7 +1026,7 @@
 		alias     : 'date',
 		extend    : __lib__.type.Object,
 // public properties
-		format    : api.date.default_format,
+		format    : __lib__.api.date.default_format,
 		max       :  3250368e7,   // 3000-01-01T00:00:00.000Z
 		min       : -621672192e5, // 0000-01-01T00:00:00.000Z
 // public methods
@@ -927,10 +1039,10 @@
 			return v;
 		},
 		stringify   : function( v ) {
-			return api.date.format( this.coerce( v ), this.format );
+			return __lib__.api.date.format( this.coerce( v ), this.format );
 		},
 		valid     : function( v ) {
-			return this.parent( arguments ) && api.date.between( v, this.min, this.max );
+			return this.parent( arguments ) && __lib__.api.date.between( v, this.min, this.max );
 		},
 // internal methods
 		fallback  : function() { return new Date; },
@@ -953,7 +1065,7 @@
 			switch ( util.ntype( v ) ) {
 				case 'date'   : return v;
 				case 'number' : return new Date( v ); // assume unix timestamp
-				case 'string' : return api.date.coerce( v, this.format );
+				case 'string' : return __lib__.api.date.coerce( v, this.format );
 			}
 
 			return this.contingency;

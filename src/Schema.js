@@ -51,7 +51,7 @@
 	// this handles Schema's being able to inherit their supers' `properties` correctly
 		// NB. the reason we are not creating instance of Schema.Property in here is so that each property
 		//     can be either over-written or have its configurations tweaked when the Schema is instantiated
-			afterdefine    : function( Class ) {
+			afterdefine       : function( Class ) {
 				var Super = Class[__super__],
 					props = Class.prototype.properties;
 
@@ -67,58 +67,87 @@
 
 				util.def( Class,
 						__properties__,
-						{ value : is_obj( Super[__properties__] ) ? util.update( props, Super[__properties__] ) : props },
+						{ value : is_obj( Super[__properties__] ) ? util.merge( util.merge( Super[__properties__] ), props ) : props },
 						 'r',
 						  true );
 			},
 	// this handles allowing Schema's to have their `properties` rejigged as well as ensuring
 	// any `properties` defined when the Schema was created are added to the the instance
 	// without risking any of the pitfalls created from adding non-primitives to Function prototypes
-			beforeinstance : function( Class, instance, args ) {
-				var config = is_obj( args[0] ) ? args[0] : args[0] = { properties : util.obj() };
+			beforeinstance    : function( Class, instance, args ) {
+				var config = is_obj( args[0] ) ? args[0] : args[0] = { properties : util.obj() },
+					props  = config.properties;
 
-				if ( is_arr( config.properties ) )
-					config.properties = config.properties.reduce( to_property_map.bind( Class ), util.obj() );
+				if ( is_arr( props ) )
+					props = props.reduce( to_property_map.bind( Class ), util.obj() );
 
-				if ( !is_obj( config.properties ) )
-					config.properties = util.obj();
+				if ( !is_obj( props ) )
+					props = util.obj();
 
-				!is_obj( Class[__properties__] ) || util.update( config.properties, Class[__properties__] );
+				if ( is_obj( Class[__properties__] ) )
+					props = util.merge( util.merge( Class[__properties__] ), props );
 
-				config.properties = Object.reduce( config.properties, to_property_array.bind( this ), [] );
+				config.properties = Object.reduce( props, to_property_array.bind( this ), [] );
 			},
 // class configuration
-			alias          : 'schema',
-			extend         : __lib__.Sanitizer,
+			extend            : __lib__.Sanitizer,
 // public properties
-			cast           : null,
-			properties     : null,
+			attribute         : null,
+			cast              : null,
+			properties        : null,
+			sanitizeProperty_ : null, // Array#reduce doesn't supply a context param, so we need to set this in `init`
 // public methods
-			coerce         : function( v ) {
-				return this.properties.reduce( this.aggregate, new Accumulator( this, v, this.value( v ) ) ).value;
-			},
-			valid          : function( v ) { return this.properties.every( this.validProperty, v ); },
-// internal methods
-			aggregate      : function( accumulator, property ) {
-				property.coerce( accumulator );
+			coerce            : function( v ) {
+				var SM          = STRICT_MODE,
+					strict      = this.strict,
+					val         = this.sanitize( this.accumulator( v ) ).value;
 
-				return accumulator;
+				strict === SM.FALLBACK || this.valid( val ) || error( strict === SM.ERROR ? 'error' : 'warning', {
+					data     : v,
+					value    : val,
+					instance : this,
+					message  : this.constructor[__classname__] + ': Invalid coercion.'
+				} );
+
+				return val;
 			},
-			init           : function()    {
+			sanitize          : function ( accumulator ) {
+				return this.properties.reduce( this.sanitizeProperty_, accumulator );
+			},
+			valid             : function( v ) {
+				return this.properties.every( this.validProperty.bind( this, v ) );
+			},
+// internal methods
+			accumulator       : function( v ) {
+				return new Accumulator( this, v, this.value( v ) )
+			},
+			init              : function()    {
 	// `this.properties` should always be an Array because of the `beforeinstance` catch all
 	// it should be technically impossible for it to not be an Array; the only way for it to not be would be to
 	// explicitly call expurg8.Schema.Property.prototype.init without creating an instance, in which case: WHY!!??
+	// `this.attribute` is a map of the `this.properties` Array using the Schema.Property `id` as the key.
+				this.attribute  = util.obj();
 				this.properties = this.properties.map( this.initProperty, this );
+
+				util.def( this, 'sanitizeProperty_', this.sanitizeProperty.bind( this ), 'w', true );
+
+				this.parent();
 			},
-			initProperty   : function( property ) {
-				return is_prop( property ) ? property : create( 'property', util.copy( property, { schema : this } ) );
+			initProperty      : function( prop ) {
+				var property = is_prop( prop ) ? prop : create( 'property', util.copy( prop, { schema : this } ) );
+				return this.attribute[property.id] = property;
+			},
+			sanitizeProperty  : function( accumulator, property ) {
+				return property.sanitize( accumulator );
 			},
 	// NB we don't need to test each property as they will test themselves on instantiation
-			test           : function()    {
+			test              : function()    {
 				return is_arr( this.properties ) && !!this.properties.length && this.properties.every( is_prop );
 			},
-			validProperty  : function( property ) { return property.valid( this ); },
-			value          : function( v ) {
+			validProperty     : function( v, property ) {
+				return property.valid( v );
+			},
+			value             : function( v ) {
 				switch ( util.ntype( this.cast ) ) {
 					case 'function' : return this.cast();
 					case 'string'   : switch ( this.cast ) {

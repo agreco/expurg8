@@ -362,7 +362,7 @@
 		alias     : 'date',
 		extend    : __lib__.type.Object,
 // public properties
-		format    : api.date.default_format,
+		format    : __lib__.api.date.default_format,
 		max       :  3250368e7,   // 3000-01-01T00:00:00.000Z
 		min       : -621672192e5, // 0000-01-01T00:00:00.000Z
 // public methods
@@ -375,10 +375,10 @@
 			return v;
 		},
 		stringify   : function( v ) {
-			return api.date.format( this.coerce( v ), this.format );
+			return __lib__.api.date.format( this.coerce( v ), this.format );
 		},
 		valid     : function( v ) {
-			return this.parent( arguments ) && api.date.between( v, this.min, this.max );
+			return this.parent( arguments ) && __lib__.api.date.between( v, this.min, this.max );
 		},
 // internal methods
 		fallback  : function() { return new Date; },
@@ -401,7 +401,7 @@
 			switch ( util.ntype( v ) ) {
 				case 'date'   : return v;
 				case 'number' : return new Date( v ); // assume unix timestamp
-				case 'string' : return api.date.coerce( v, this.format );
+				case 'string' : return __lib__.api.date.coerce( v, this.format );
 			}
 
 			return this.contingency;

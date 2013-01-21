@@ -1,7 +1,7 @@
 	function Accumulator( schema, data, value ) {
 		this.schema = schema;
 		this.data   = data;
-		this.value  = value || ( is_arr( raw ) ? [] : util.obj() );
+		this.value  = value || ( is_arr( data ) ? [] : util.obj() );
 	}
 
 	Accumulator.prototype = {

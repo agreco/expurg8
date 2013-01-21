@@ -47,6 +47,8 @@
 			desc.module = __lib__;
 		if ( desc.module === __lib__ )
 			name = namespace( name );
+		if ( is_str( desc.extend ) && desc.extend.toLowerCase() in cache.Class )
+			desc.extend = cache.Class[desc.extend.toLowerCase()];
 
 		var alias = desc.alias; delete desc.alias;
 
@@ -133,7 +135,12 @@
 	}
 
 	function register( Class, aliases ) {
-		aliases.unshift( Class[__classname__] );
+		var cn = Class[__classname__];
+
+		aliases.unshift( cn );
+
+		cn.indexOf( Name + '.' ) !== 0 || aliases.push( cn.split( '.' ).slice( 1 ).join( '.' ) );
+
 		return aliases.reduce( reg_alias, Class );
 	}
 

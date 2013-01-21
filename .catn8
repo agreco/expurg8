@@ -1,7 +1,7 @@
 {
 	"source"    : {
 		"dir"   : "./src",
-		"files" :  ["vars", "util", "lib", "api", "expose", "Sanitizer", "Accumulator", "Schema", "Property", "types", "exceptions"]
+		"files" :  ["vars", "util", "lib", "api", "expose", "Sanitizer", "Accumulator", "Schema", "validation", "Property", "types", "exceptions"]
 	},
 	"target"    : {
 		"dir"   : "{pwd}",

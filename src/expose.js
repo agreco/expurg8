@@ -10,6 +10,12 @@
 		if ( is_num( Object.value( PACKAGE, Name + '.MAX_ARRAY_LENGTH' ) ) )
 			MAX_ARRAY_LENGTH = PACKAGE[Name].MAX_ARRAY_LENGTH;
 
+		if ( Object.value( PACKAGE, Name + '.STRICT' ) ) {
+			STRICT = PACKAGE[Name].STRICT;
+			if ( !( STRICT in STRICT_MODE ) && !~STRICT_MODE_VAL.indexOf( STRICT ) )
+				STRICT = STRICT_MODE.FALLBACK;
+		}
+
 		delete PACKAGE[Name];
 	}
 
@@ -17,6 +23,9 @@
 	util.defs( ( __lib__ = util.expose( __lib__, Name, PACKAGE ) ), {
 		DECIMAL_PRECISION : DECIMAL_PRECISION,
 		MAX_ARRAY_LENGTH  : MAX_ARRAY_LENGTH,
+		STRICT_MODE       : { value : STRICT_MODE },
+		STRICT            : STRICT,
+
 		api               : { value : api },
 		lib               : { value : lib },
 
